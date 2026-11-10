@@ -132,6 +132,24 @@ test command.
 **Why.** A test command in the daemon makes it a CI system. The reviewer is
 already the verifier.
 
+### A rebased branch keeps its base until it is checked again
+
+**Decision.** When the daemon rebases a branch during a turn, it reserves that
+base for the issue until the turn ends. Any other merge into that base waits:
+a `NEXT: merge` waits silently and the agent never hears of it, while a tool
+call is refused with the reason. The first rebase in a turn uses no
+`directive_retries`. The reservation lives only in the daemon's memory.
+
+**Why.** Without it, a base that moves faster than a check runs keeps sending
+the branch back, and the retries run out on a race, not on the work. Landing
+optimistically and catching breakage later needs CI, which the framework does
+not have, so the tree that lands must be the tree that was checked. Agents only
+ask to merge, so waiting is the daemon's business, not theirs. Holding it in
+memory means a restart clears it, so nothing can deadlock. A merge from another
+process (a person's own session, a commit by hand) does not see it and lands
+like any other commit. The rebased issue then needs one more check, and that
+check counts against its retries.
+
 ### No approvals system for now
 
 **Decision.** The human gate is the budget and its reset, not per-action

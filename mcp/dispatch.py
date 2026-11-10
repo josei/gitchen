@@ -70,7 +70,7 @@ import time
 import uuid
 from pathlib import Path
 
-from . import artifacts, budget, cost, drain, frontmatter, holders, issues, pause, retry, server, worktrees
+from . import artifacts, budget, cost, drain, frontmatter, holders, issues, merge, pause, retry, server, worktrees
 from .config import ProjectConfig, declared_outcomes
 from .harness import get_harness
 
@@ -426,29 +426,39 @@ def _try_block_on(cfg: ProjectConfig, issue_id: int, ids: list[int], identity: s
 
 
 def _try_close(cfg: ProjectConfig, issue_id: int, state: str, identity: str,
-               role_for_email: str) -> str | None:
+               role_for_email: str) -> tuple[str | None, bool]:
     """Closing is the update_issue tool, called on the role's behalf, so the
-    same permission and the same checks apply as for a tool call. Returns None
-    when it worked, or why it didn't (a merge that cannot fast-forward, done
-    while work is unmerged). The daemon tells the agent, not the issue.
+    same permission and the same checks apply as for a tool call. Returns why
+    it didn't work, or None (a merge that cannot fast-forward, done while work
+    is unmerged), and whether the reason is that the branch was rebased. The
+    daemon tells the agent, not the issue.
 
-    A concurrent edit is retried here: it says nothing about the work.
+    A concurrent edit is retried here: it says nothing about the work. So is a
+    base reserved for another issue's check: the merge waits for it, and the
+    agent never hears of it. To the agent a merge only takes longer.
 
     A closed issue keeps the role that closed it as its assignee. Handing it
     back to the creator was pointless — the issue is closed — and it made
     merged issues read as "assigned to the coordinator", a role that cannot
     even be dispatched (an issue can no longer be assigned to one at all). The assignment history still records who closed it."""
-    for _ in range(3):
+    stale = 0
+    while stale < 3:
         current = issues.get_issue(cfg, issue_id)
         try:
             result = server.dispatch(cfg, "update_issue",
                                      {"id": issue_id, "hash": current["hash"], "state": state},
                                      (identity, role_for_email))
+        except merge.Reserved as exc:
+            merge.wait_for(cfg, exc.base, issue_id)
+            continue
+        except merge.Rebased as exc:
+            return str(exc), True
         except (ValueError, PermissionError) as exc:
-            return str(exc)
+            return str(exc), False
         if result.get("ok"):
-            return None
-    return f"the issue kept changing while setting it {state}"
+            return None, False
+        stale += 1
+    return f"the issue kept changing while setting it {state}", False
 
 
 def _block(cfg: ProjectConfig, issue_id: int, reason: str) -> None:
@@ -497,6 +507,7 @@ def _run_one(cfg: ProjectConfig, role: str, issue_id: int, task_id: str) -> None
             except Exception:
                 pass  # the issue file itself may be unreadable; the original traceback is still in the daemon log
     finally:
+        merge.release(cfg, issue_id)
         holders.release(cfg.project_root, issue_id, task_id)
         shutil.rmtree(cfg.project_root / ".agents-daemon" / "scratch" / task_id, ignore_errors=True)
 
@@ -691,14 +702,16 @@ def _run_one_turn(cfg: ProjectConfig, role: str, issue_id: int, task_id: str) ->
     session_id = turn.session_id
     directive = _resolve_directive(cfg, role, turn.text)
     attempts = 0
+    rebases = 0
 
     while True:
         refusal = None
+        rebased = False
         if directive is not None and directive[0] == "state":
             if directive[1] == "merged" and cfg.workspace_of(role) == "none":
                 refusal = "this role has no repository, so there is nothing to merge"
             else:
-                refusal = _try_close(cfg, issue_id, directive[1], identity, role_for_email)
+                refusal, rebased = _try_close(cfg, issue_id, directive[1], identity, role_for_email)
             if refusal is None:
                 _publish(cfg, issue_id, report, identity, role_for_email, shared, cwd,
                      turns=_turn_records(role, usage, started))
@@ -715,7 +728,12 @@ def _run_one_turn(cfg: ProjectConfig, role: str, issue_id: int, task_id: str) ->
             _hand_on(cfg, issue_id, directive, identity, role_for_email)
             return
 
-        if attempts >= cfg.directive_retries:
+        # The first rebase in a turn is not the agent's mistake: the base is kept
+        # for this issue while it checks again, so one more check is enough. A
+        # base that moves anyway (a commit made outside the daemon) counts.
+        rebases += rebased
+        free = rebased and rebases == 1
+        if not free and attempts >= cfg.directive_retries:
             _publish(cfg, issue_id, report, identity, role_for_email, shared, cwd,
                      turns=_turn_records(role, usage, started))
             if refusal is not None:
@@ -726,7 +744,8 @@ def _run_one_turn(cfg: ProjectConfig, role: str, issue_id: int, task_id: str) ->
                 _return_safely(cfg, issue_id, identity, role_for_email)
             return
 
-        attempts += 1
+        if not free:
+            attempts += 1
         ask = _correction(cfg, role) if refusal is None else _refusal_message(cfg, role, refusal)
         turn = _attempt(lambda: harness.resume(session_id, ask, cwd, settings),
                         role, issue_id, identity)

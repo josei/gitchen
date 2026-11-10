@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from mcp import dispatch, holders, issues, pause, worktrees  # noqa: E402
+from mcp import dispatch, holders, issues, merge, pause, worktrees  # noqa: E402
 from mcp import harness as harness_module  # noqa: E402
 from mcp.config import ProjectConfig  # noqa: E402
 from mcp.harness import TurnResult  # noqa: E402
@@ -1583,3 +1583,58 @@ def test_a_role_that_may_close_is_told_how_to_wait_on_other_issues(tmp_path):
     cfg = make_project(tmp_path, allowed_tools="\n  pm: [update_issue]")
     assert "NEXT: blocked_by #<id>" in dispatch._directive_line(cfg, "pm")
     assert "blocked_by" not in dispatch._directive_line(make_project(tmp_path / "x"), "builder")
+
+
+def _move_main(cfg, name):
+    (cfg.public_repo / name).write_text(name)
+    subprocess.run(["git", "add", name], cwd=cfg.public_repo, check=True)
+    subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", name],
+                   cwd=cfg.public_repo, check=True)
+
+
+class _MergingReviewer:
+    """Approves, and after each rebase checks again and approves again. Each
+    entry of `moves` is a commit landed on main by hand while it works."""
+
+    def __init__(self, cfg, moves):
+        self.cfg, self.moves, self.asked = cfg, list(moves), []
+
+    def start(self, prompt, cwd, settings):
+        _commit_in_worktree(cwd)
+        _move_main(self.cfg, self.moves.pop(0))
+        return TurnResult("s1", "Approved.\nNEXT: merge", {}, True)
+
+    def resume(self, session_id, prompt, cwd, settings):
+        self.asked.append(prompt)
+        if self.moves:
+            _move_main(self.cfg, self.moves.pop(0))
+        return TurnResult(session_id, "Checked again on the new base. Approved.\nNEXT: merge", {}, True)
+
+    def interrupt(self, *a, **k):
+        pass
+
+
+def test_a_rebase_sends_the_branch_back_once_without_using_a_retry(tmp_path):
+    cfg = make_project(tmp_path, allowed_tools="\n  reviewer: [update_issue]", directive_retries=0)
+    h = _MergingReviewer(cfg, ["moved.txt"])
+    harness_module._REGISTRY["fake"] = lambda: h
+    created = issues.create_issue(cfg, "title", "body", None, 0, "pm", "pm", assignee="reviewer")
+    _join_all(dispatch.tick(cfg))
+
+    final = issues.get_issue(cfg, created["id"])
+    assert len(h.asked) == 1 and "rebased onto main" in h.asked[0]
+    assert final["state"] == "merged"
+    assert "Checked again on the new base" in "\n".join(line["text"] for line in final["lines"])
+    assert not merge._reservations, "the turn ended, so the base is free"
+
+
+def test_a_base_that_keeps_moving_outside_the_daemon_still_runs_out_of_retries(tmp_path):
+    cfg = make_project(tmp_path, allowed_tools="\n  reviewer: [update_issue]", directive_retries=0)
+    h = _MergingReviewer(cfg, ["moved.txt", "moved-again.txt"])
+    harness_module._REGISTRY["fake"] = lambda: h
+    created = issues.create_issue(cfg, "title", "body", None, 0, "pm", "pm", assignee="reviewer")
+    _join_all(dispatch.tick(cfg))
+
+    final = issues.get_issue(cfg, created["id"])
+    assert final["state"] == "blocked"
+    assert not merge._reservations
