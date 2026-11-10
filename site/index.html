@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>gitchen: git-based agent orchestration</title>
+<meta name="description" content="gitchen is git-based agent orchestration: issues are markdown files in git, every move is a commit, and you define the roles, models and tools each agent gets. A tiny kitchen of AI chefs that cooks your issues.">
+<meta name="theme-color" content="#fff0f3">
+<meta property="og:title" content="gitchen: git-based agent orchestration">
+<meta property="og:description" content="Git is the single source of truth for your agents and your issues. Define roles, right-size the models, spend fewer tokens.">
+<meta property="og:type" content="website">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/fredoka.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="styles.css">
+<script>document.documentElement.classList.add("js")</script>
+</head>
+<body>
+<div class="sparkles" aria-hidden="true">
+  <i style="--x:5%;--y:14%;--s:18px;--d:0s">✦</i>
+  <i style="--x:94%;--y:9%;--s:14px;--d:1.2s">✦</i>
+  <i style="--x:90%;--y:38%;--s:20px;--d:2.1s">✧</i>
+  <i style="--x:2%;--y:52%;--s:15px;--d:.7s">✧</i>
+  <i style="--x:96%;--y:70%;--s:17px;--d:1.8s">✦</i>
+  <i style="--x:4%;--y:88%;--s:13px;--d:2.6s">✦</i>
+  <i style="--x:50%;--y:96%;--s:16px;--d:.4s">✧</i>
+  <i style="--x:62%;--y:5%;--s:12px;--d:3s">✦</i>
+</div>
+
+<header class="top">
+  <a class="brand" href="./" aria-label="gitchen, home">
+    <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><path d="M33 30l11 8" stroke="#3b3150" stroke-width="7" stroke-linecap="round"/>
+      <path d="M33 30l11 8" stroke="#ffc2a8" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="21" cy="26" r="17" fill="#b6ead8" stroke="#3b3150" stroke-width="2.4"/>
+      <circle cx="21" cy="26" r="12.5" fill="#fff6dc" stroke="#3b3150" stroke-width="1.6"/>
+      <ellipse cx="21" cy="25" rx="5.4" ry="5.8" fill="#ffd770" stroke="#3b3150" stroke-width="1.4"/>
+      <circle cx="17.2" cy="23.5" r="1.5" fill="#3b3150"/>
+      <circle cx="24.8" cy="23.5" r="1.5" fill="#3b3150"/>
+      <path d="M18.6 27.2q2.4 2.4 4.8 0" fill="none" stroke="#3b3150" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="15.2" cy="26.8" r="1.5" fill="#ff9fbd"/>
+      <circle cx="26.8" cy="26.8" r="1.5" fill="#ff9fbd"/>
+      <path d="M33 5l1.1 2.6L37 8.7l-2.9 1.1L33 12.4l-1.1-2.6L29 8.7l2.9-1.1z" fill="#ff9fbd" stroke="#3b3150" stroke-width="1"/></svg>
+    <span class="brand-name">git<em>chen</em></span>
+  </a>
+  <nav aria-label="Sections">
+    <a href="#git">Git</a>
+    <a href="#roles">Roles</a>
+    <a href="#tokens">Tokens</a>
+    <a href="#how">How it works</a>
+    <a href="#view">The kitchen</a>
+  </nav>
+  <a class="btn btn-small" href="https://github.com/josei/gitchen">GitHub <span aria-hidden="true">♡</span></a>
+</header>
+
+<main>
+  <!-- hero -->
+  <section class="hero">
+    <p class="eyebrow reveal"><span aria-hidden="true">🍳</span> meet gitchen</p>
+    <h1 class="reveal"><span class="stitched">git-based</span> agent orchestration</h1>
+    <p class="lede reveal">A tiny kitchen of AI chefs that cook your issues. Issues are files, roles are prompts, and git remembers everything.</p>
+    <div class="actions reveal">
+      <a class="btn btn-primary btn-lg" href="#start">Start cooking <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ghost btn-lg" href="https://github.com/josei/gitchen">View on GitHub</a>
+    </div>
+    <ul class="chips reveal" aria-label="Highlights">
+      <li>git is the single source of truth</li><li>bring your own agent CLI</li><li>every turn sandboxed</li>
+    </ul>
+
+    <div class="card scene reveal" id="scene">
+      <div class="scene-head">
+        <h2><span class="ico" aria-hidden="true">🍳</span><span id="scene-who">on the stove · pm</span></h2>
+        <span class="scene-issue">#42 · Add a dark mode toggle</span>
+      </div>
+      <div class="kitchen cooking" role="img" aria-label="Illustration: four little chef agents, with the example roles pm, builder, reviewer and researcher, in a kitchen. An order, issue 42, is passed from the pm to the builder to the reviewer and back to the pm, who merges it.">
+        <div class="awning"></div>
+        <div class="window"><span class="sun"></span><span class="cloud"></span></div>
+        <div class="shelf"><span class="jar j1"><b></b></span><span class="jar j2"><b></b></span><span class="jar j3"><b></b></span></div>
+        <div class="rail"><i></i><i></i><i></i></div>
+        <div class="stove">
+          <span class="flame"><i></i><i></i><i></i></span>
+          <span class="pot"><span class="pot-order">#42</span></span>
+        </div>
+        <span class="steam s1"></span><span class="steam s2"></span><span class="steam s3"></span>
+        <div class="floor">
+          <div class="cook active" data-cook="pm"><span class="say"><code>NEXT: assign builder</code><i class="tail" aria-hidden="true"></i></span><svg viewBox="0 0 64 72" role="img" aria-label="pm" class="active"> <ellipse cx="32" cy="67.5" rx="15" ry="3.5" fill="#3b3150" opacity=".14"/> <rect x="20" y="43" width="24" height="21" rx="9" fill="#90caf9" stroke="#3b3150" stroke-width="1.6"/> <rect x="26" y="47" width="12" height="10" rx="2.5" fill="#fff" stroke="#3b3150" stroke-width="1.2"/> <path d="M29 51.5h6" stroke="#90caf9" stroke-width="1.8" stroke-linecap="round"/> <circle cx="32" cy="27" r="18" fill="#fff0e4" stroke="#3b3150" stroke-width="1.8"/> <ellipse cx="25.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <ellipse cx="38.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <circle cx="26.3" cy="25.8" r="1" fill="#fff"/> <circle cx="39.3" cy="25.8" r="1" fill="#fff"/> <path d="M28.5 33.2q3.5 5.6 7 0z" fill="#ff7a9c" stroke="#3b3150" stroke-width="1.4" stroke-linejoin="round"/> <ellipse cx="20" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <ellipse cx="44" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <path d="M18 16c-3-6 2-12 7-13 1-4 9-5 11-1 4-2 9 1 8 6 4 2 3 7-1 8z" fill="#fff" stroke="#3b3150" stroke-width="1.5"/> <rect x="17" y="14" width="30" height="6" rx="3" fill="#fff" stroke="#3b3150" stroke-width="1.5"/> <g transform="translate(50 47) rotate(16)"><g class="tool"><rect x="-1.4" y="-9" width="2.8" height="11" rx="1.4" fill="#b9b2c9"/> <path d="M-5 1q5 10 10 0M-3.4 1q3.4 8 6.8 0" fill="none" stroke="#b9b2c9" stroke-width="1.5"/></g></g> </svg><span class="cook-name">pm</span></div>
+          <div class="cook" data-cook="builder"><svg viewBox="0 0 64 72" role="img" aria-label="builder" class=""> <ellipse cx="32" cy="67.5" rx="15" ry="3.5" fill="#3b3150" opacity=".14"/> <rect x="20" y="43" width="24" height="21" rx="9" fill="#ffd166" stroke="#3b3150" stroke-width="1.6"/> <rect x="26" y="47" width="12" height="10" rx="2.5" fill="#fff" stroke="#3b3150" stroke-width="1.2"/> <path d="M29 51.5h6" stroke="#ffd166" stroke-width="1.8" stroke-linecap="round"/> <circle cx="32" cy="27" r="18" fill="#fff0e4" stroke="#3b3150" stroke-width="1.8"/> <ellipse cx="25.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <ellipse cx="38.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <circle cx="26.3" cy="25.8" r="1" fill="#fff"/> <circle cx="39.3" cy="25.8" r="1" fill="#fff"/> <path d="M28.5 33.2q3.5 3.2 7 0" fill="none" stroke="#3b3150" stroke-width="1.6" stroke-linecap="round"/> <ellipse cx="20" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <ellipse cx="44" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <path d="M14 16c0-8 8-13 18-13s18 5 18 13z" fill="#ffd166" stroke="#3b3150" stroke-width="1.5"/> <path d="M12 16h34c4 0 5 3 2 5H15c-3 0-4-2-3-5z" fill="#ffd166" stroke="#3b3150" stroke-width="1.5"/> <g transform="translate(50 47) rotate(16)"><g class="tool"><rect x="-1.2" y="-9" width="2.4" height="12" rx="1.2" fill="#b9b2c9"/> <ellipse cx="0" cy="5" rx="4" ry="5" fill="#b9b2c9"/></g></g> </svg><span class="cook-name">builder</span></div>
+          <div class="cook" data-cook="reviewer"><svg viewBox="0 0 64 72" role="img" aria-label="reviewer" class=""> <ellipse cx="32" cy="67.5" rx="15" ry="3.5" fill="#3b3150" opacity=".14"/> <rect x="20" y="43" width="24" height="21" rx="9" fill="#90caf9" stroke="#3b3150" stroke-width="1.6"/> <rect x="26" y="47" width="12" height="10" rx="2.5" fill="#fff" stroke="#3b3150" stroke-width="1.2"/> <path d="M29 51.5h6" stroke="#90caf9" stroke-width="1.8" stroke-linecap="round"/> <circle cx="32" cy="27" r="18" fill="#fff0e4" stroke="#3b3150" stroke-width="1.8"/> <ellipse cx="25.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <ellipse cx="38.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <circle cx="26.3" cy="25.8" r="1" fill="#fff"/> <circle cx="39.3" cy="25.8" r="1" fill="#fff"/> <path d="M28.5 33.2q3.5 3.2 7 0" fill="none" stroke="#3b3150" stroke-width="1.6" stroke-linecap="round"/> <ellipse cx="20" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <ellipse cx="44" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <path d="M15 16c0-8 7-13 17-13s17 5 17 13z" fill="#90caf9" stroke="#3b3150" stroke-width="1.5"/> <rect x="14" y="13" width="36" height="7" rx="3" fill="#90caf9" stroke="#3b3150" stroke-width="1.5"/> <circle cx="32" cy="3" r="4" fill="#fff" stroke="#3b3150" stroke-width="1.5"/> <g transform="translate(50 47) rotate(24)"><g class="tool"><rect x="-1.2" y="-9" width="2.4" height="12" rx="1.2" fill="#b9b2c9"/> <circle cx="0" cy="6" r="4.5" fill="none" stroke="#b9b2c9" stroke-width="2"/></g></g> </svg><span class="cook-name">reviewer</span></div>
+          <div class="cook" data-cook="researcher"><svg viewBox="0 0 64 72" role="img" aria-label="researcher" class=""> <ellipse cx="32" cy="67.5" rx="15" ry="3.5" fill="#3b3150" opacity=".14"/> <rect x="20" y="43" width="24" height="21" rx="9" fill="#ffb4a2" stroke="#3b3150" stroke-width="1.6"/> <rect x="26" y="47" width="12" height="10" rx="2.5" fill="#fff" stroke="#3b3150" stroke-width="1.2"/> <path d="M29 51.5h6" stroke="#ffb4a2" stroke-width="1.8" stroke-linecap="round"/> <circle cx="32" cy="27" r="18" fill="#fff0e4" stroke="#3b3150" stroke-width="1.8"/> <ellipse cx="25.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <ellipse cx="38.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <circle cx="26.3" cy="25.8" r="1" fill="#fff"/> <circle cx="39.3" cy="25.8" r="1" fill="#fff"/> <path d="M28.5 33.2q3.5 3.2 7 0" fill="none" stroke="#3b3150" stroke-width="1.6" stroke-linecap="round"/> <ellipse cx="20" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <ellipse cx="44" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <path d="M13 16c5-7 12-10 19-10s14 3 19 10l-4 3c-4-5-9-7-15-7s-11 2-15 7z" fill="#ffb4a2" stroke="#3b3150" stroke-width="1.5"/> <circle cx="50" cy="17" r="3" fill="#ffb4a2" stroke="#3b3150" stroke-width="1.5"/> <g transform="translate(50 47) rotate(35)"><g class="tool"><rect x="-2.2" y="-8" width="4.4" height="18" rx="2.2" fill="#d9a066"/> <rect x="-1.1" y="-11" width="2.2" height="4" rx="1" fill="#b57b45"/> <rect x="-1.1" y="9" width="2.2" height="4" rx="1" fill="#b57b45"/></g></g> </svg><span class="cook-name">researcher</span></div>
+        </div>
+      </div>
+      <p class="scene-note">pm, builder and reviewer are just example roles; you name your own. The daemon notices an issue's <code>assignee</code> and spawns that role. Nobody calls anybody.</p>
+    </div>
+  </section>
+
+  <div class="ribbon-wrap"><div class="ribbon" aria-hidden="true"><div><span>issues ✦ roles ✦ worktrees ✦ commits ✦ merges ✦ tiny models ✦ big appetite ✦ </span><span>issues ✦ roles ✦ worktrees ✦ commits ✦ merges ✦ tiny models ✦ big appetite ✦ </span></div></div></div>
+
+  <!-- git as ssot -->
+  <section id="git" class="block">
+    <div class="sec-head reveal">
+      <p class="eyebrow">single source of truth</p>
+      <h2>Git is the whole <em>pantry.</em></h2>
+      <p class="sub">No hidden database, no dashboard that knows more than the repo does. Your issues, your agents and their work all live in git.</p>
+    </div>
+    <div class="cards three">
+      <article class="card tone-mint reveal">
+        <div class="blob">📝</div>
+        <h3>Issues are just files</h3>
+        <p>Every issue is a markdown file, <code>issues/42.md</code>, with its state, labels, priority and assignee in front matter and the conversation underneath. Read it, grep it, diff it, review it.</p>
+      </article>
+      <article class="card tone-rose reveal">
+        <div class="blob">🔖</div>
+        <h3>Every move is a commit</h3>
+        <p>Creating, assigning, commenting and closing are all committed, and the commit author is the role that did it. <code>git log</code> is the audit trail.</p>
+      </article>
+      <article class="card tone-lav reveal">
+        <div class="blob">🌿</div>
+        <h3>A worktree per issue</h3>
+        <p>Each issue gets its own <code>issue/42</code> branch in its own git worktree, so agents never trip over each other. Accepted work is fast-forwarded into <code>main</code>, or squashed into one commit if you like.</p>
+      </article>
+    </div>
+    <div class="cards two codes">
+      <figure class="code reveal">
+        <figcaption><i></i><i></i><i></i><span>issues/42.md</span></figcaption>
+<pre><code><span class="c">---</span>
+<span class="k">id</span>: 42
+<span class="k">title</span>: <span class="s">Add a dark mode toggle</span>
+<span class="k">state</span>: open
+<span class="k">labels</span>: [roadmap]
+<span class="k">priority</span>: 30
+<span class="k">assignee</span>: builder
+<span class="k">base_branch</span>: main
+<span class="c">---</span>
+Users ask for a dark theme. Add a toggle in
+settings and remember the choice.
+
+<span class="c">## Comments</span>
+<span class="c">**pm**</span> Acceptance: toggle persists, contrast passes.</code></pre>
+      </figure>
+      <figure class="code reveal">
+        <figcaption><i></i><i></i><i></i><span>git log issues/</span></figcaption>
+<pre><code><span class="p">$</span> git log --format='%h %an: %s' issues/
+
+<span class="h">3f9a1c2</span> pm: Issue #12: assigned to builder
+<span class="h">b81e704</span> pm: Issue #12: comment
+<span class="h">9d2a6f5</span> reviewer: Issue #11: returned to pm
+<span class="h">e407b3a</span> reviewer: Issue #11: comment
+<span class="h">6c1d85e</span> pm: Issue #11: assigned to reviewer
+<span class="c"># who did what, and when, forever</span></code></pre>
+      </figure>
+    </div>
+  </section>
+
+  <!-- roles -->
+  <section id="roles" class="block">
+    <div class="sec-head reveal">
+      <p class="eyebrow">your brigade, your rules</p>
+      <h2>Define your roles, <em>not workflows.</em></h2>
+      <p class="sub">gitchen has no built-in roles. A role is whatever you define: a markdown prompt, a model size and a short list of tools. Name them anything, and hand work from one to the next by assigning the issue.</p>
+    </div>
+    <div class="cards four roles">
+      <article class="card tone-lav reveal">
+        <div class="portrait"><svg viewBox="0 0 64 72" role="img" aria-label="pm" class=""> <ellipse cx="32" cy="67.5" rx="15" ry="3.5" fill="#3b3150" opacity=".14"/> <rect x="20" y="43" width="24" height="21" rx="9" fill="#90caf9" stroke="#3b3150" stroke-width="1.6"/> <rect x="26" y="47" width="12" height="10" rx="2.5" fill="#fff" stroke="#3b3150" stroke-width="1.2"/> <path d="M29 51.5h6" stroke="#90caf9" stroke-width="1.8" stroke-linecap="round"/> <circle cx="32" cy="27" r="18" fill="#fff0e4" stroke="#3b3150" stroke-width="1.8"/> <ellipse cx="25.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <ellipse cx="38.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <circle cx="26.3" cy="25.8" r="1" fill="#fff"/> <circle cx="39.3" cy="25.8" r="1" fill="#fff"/> <path d="M28.5 33.2q3.5 3.2 7 0" fill="none" stroke="#3b3150" stroke-width="1.6" stroke-linecap="round"/> <ellipse cx="20" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <ellipse cx="44" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <path d="M18 16c-3-6 2-12 7-13 1-4 9-5 11-1 4-2 9 1 8 6 4 2 3 7-1 8z" fill="#fff" stroke="#3b3150" stroke-width="1.5"/> <rect x="17" y="14" width="30" height="6" rx="3" fill="#fff" stroke="#3b3150" stroke-width="1.5"/> <g transform="translate(50 47) rotate(16)"><g class="tool"><rect x="-1.4" y="-9" width="2.8" height="11" rx="1.4" fill="#b9b2c9"/> <path d="M-5 1q5 10 10 0M-3.4 1q3.4 8 6.8 0" fill="none" stroke="#b9b2c9" stroke-width="1.5"/></g></g> </svg></div>
+        <h3>pm</h3>
+        <p>An example: writes the acceptance criteria, sequences the work, and merges, closes or blocks.</p>
+        <p class="tags"><span class="chip">model: medium</span><span class="chip">can assign &amp; close</span></p>
+      </article>
+      <article class="card tone-peach reveal">
+        <div class="portrait"><svg viewBox="0 0 64 72" role="img" aria-label="builder" class=""> <ellipse cx="32" cy="67.5" rx="15" ry="3.5" fill="#3b3150" opacity=".14"/> <rect x="20" y="43" width="24" height="21" rx="9" fill="#ffd166" stroke="#3b3150" stroke-width="1.6"/> <rect x="26" y="47" width="12" height="10" rx="2.5" fill="#fff" stroke="#3b3150" stroke-width="1.2"/> <path d="M29 51.5h6" stroke="#ffd166" stroke-width="1.8" stroke-linecap="round"/> <circle cx="32" cy="27" r="18" fill="#fff0e4" stroke="#3b3150" stroke-width="1.8"/> <ellipse cx="25.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <ellipse cx="38.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <circle cx="26.3" cy="25.8" r="1" fill="#fff"/> <circle cx="39.3" cy="25.8" r="1" fill="#fff"/> <path d="M28.5 33.2q3.5 3.2 7 0" fill="none" stroke="#3b3150" stroke-width="1.6" stroke-linecap="round"/> <ellipse cx="20" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <ellipse cx="44" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <path d="M14 16c0-8 8-13 18-13s18 5 18 13z" fill="#ffd166" stroke="#3b3150" stroke-width="1.5"/> <path d="M12 16h34c4 0 5 3 2 5H15c-3 0-4-2-3-5z" fill="#ffd166" stroke="#3b3150" stroke-width="1.5"/> <g transform="translate(50 47) rotate(16)"><g class="tool"><rect x="-1.2" y="-9" width="2.4" height="12" rx="1.2" fill="#b9b2c9"/> <ellipse cx="0" cy="5" rx="4" ry="5" fill="#b9b2c9"/></g></g> </svg></div>
+        <h3>builder</h3>
+        <p>An example: takes one issue, builds it in its worktree, tests it and commits.</p>
+        <p class="tags"><span class="chip">model: small</span><span class="chip">read-only tools</span></p>
+      </article>
+      <article class="card tone-mint reveal">
+        <div class="portrait"><svg viewBox="0 0 64 72" role="img" aria-label="reviewer" class=""> <ellipse cx="32" cy="67.5" rx="15" ry="3.5" fill="#3b3150" opacity=".14"/> <rect x="20" y="43" width="24" height="21" rx="9" fill="#90caf9" stroke="#3b3150" stroke-width="1.6"/> <rect x="26" y="47" width="12" height="10" rx="2.5" fill="#fff" stroke="#3b3150" stroke-width="1.2"/> <path d="M29 51.5h6" stroke="#90caf9" stroke-width="1.8" stroke-linecap="round"/> <circle cx="32" cy="27" r="18" fill="#fff0e4" stroke="#3b3150" stroke-width="1.8"/> <ellipse cx="25.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <ellipse cx="38.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <circle cx="26.3" cy="25.8" r="1" fill="#fff"/> <circle cx="39.3" cy="25.8" r="1" fill="#fff"/> <path d="M28.5 33.2q3.5 3.2 7 0" fill="none" stroke="#3b3150" stroke-width="1.6" stroke-linecap="round"/> <ellipse cx="20" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <ellipse cx="44" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <path d="M15 16c0-8 7-13 17-13s17 5 17 13z" fill="#90caf9" stroke="#3b3150" stroke-width="1.5"/> <rect x="14" y="13" width="36" height="7" rx="3" fill="#90caf9" stroke="#3b3150" stroke-width="1.5"/> <circle cx="32" cy="3" r="4" fill="#fff" stroke="#3b3150" stroke-width="1.5"/> <g transform="translate(50 47) rotate(24)"><g class="tool"><rect x="-1.2" y="-9" width="2.4" height="12" rx="1.2" fill="#b9b2c9"/> <circle cx="0" cy="6" r="4.5" fill="none" stroke="#b9b2c9" stroke-width="2"/></g></g> </svg></div>
+        <h3>reviewer</h3>
+        <p>An example: verifies the work instead of trusting the self-report, then returns it.</p>
+        <p class="tags"><span class="chip">model: small</span><span class="chip">read-only tools</span></p>
+      </article>
+      <article class="card tone-rose reveal">
+        <div class="portrait"><svg viewBox="0 0 64 72" role="img" aria-label="researcher" class=""> <ellipse cx="32" cy="67.5" rx="15" ry="3.5" fill="#3b3150" opacity=".14"/> <rect x="20" y="43" width="24" height="21" rx="9" fill="#ffb4a2" stroke="#3b3150" stroke-width="1.6"/> <rect x="26" y="47" width="12" height="10" rx="2.5" fill="#fff" stroke="#3b3150" stroke-width="1.2"/> <path d="M29 51.5h6" stroke="#ffb4a2" stroke-width="1.8" stroke-linecap="round"/> <circle cx="32" cy="27" r="18" fill="#fff0e4" stroke="#3b3150" stroke-width="1.8"/> <ellipse cx="25.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <ellipse cx="38.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <circle cx="26.3" cy="25.8" r="1" fill="#fff"/> <circle cx="39.3" cy="25.8" r="1" fill="#fff"/> <path d="M28.5 33.2q3.5 3.2 7 0" fill="none" stroke="#3b3150" stroke-width="1.6" stroke-linecap="round"/> <ellipse cx="20" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <ellipse cx="44" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <path d="M13 16c5-7 12-10 19-10s14 3 19 10l-4 3c-4-5-9-7-15-7s-11 2-15 7z" fill="#ffb4a2" stroke="#3b3150" stroke-width="1.5"/> <circle cx="50" cy="17" r="3" fill="#ffb4a2" stroke="#3b3150" stroke-width="1.5"/> <g transform="translate(50 47) rotate(35)"><g class="tool"><rect x="-2.2" y="-8" width="4.4" height="18" rx="2.2" fill="#d9a066"/> <rect x="-1.1" y="-11" width="2.2" height="4" rx="1" fill="#b57b45"/> <rect x="-1.1" y="9" width="2.2" height="4" rx="1" fill="#b57b45"/></g></g> </svg></div>
+        <h3>researcher</h3>
+        <p>An example: answers questions and digs through the repo so the others don't have to.</p>
+        <p class="tags"><span class="chip">model: small</span><span class="chip">read-only tools</span></p>
+      </article>
+    </div>
+    <article class="card ghost tone-butter reveal">
+      <div class="ghosts"><svg viewBox="0 0 64 72" role="img" aria-label="designer" class=""> <ellipse cx="32" cy="67.5" rx="15" ry="3.5" fill="#3b3150" opacity=".14"/> <rect x="20" y="43" width="24" height="21" rx="9" fill="#ffd166" stroke="#3b3150" stroke-width="1.6"/> <rect x="26" y="47" width="12" height="10" rx="2.5" fill="#fff" stroke="#3b3150" stroke-width="1.2"/> <path d="M29 51.5h6" stroke="#ffd166" stroke-width="1.8" stroke-linecap="round"/> <circle cx="32" cy="27" r="18" fill="#fff0e4" stroke="#3b3150" stroke-width="1.8"/> <ellipse cx="25.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <ellipse cx="38.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <circle cx="26.3" cy="25.8" r="1" fill="#fff"/> <circle cx="39.3" cy="25.8" r="1" fill="#fff"/> <path d="M28.5 33.2q3.5 3.2 7 0" fill="none" stroke="#3b3150" stroke-width="1.6" stroke-linecap="round"/> <ellipse cx="20" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <ellipse cx="44" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <path d="M15 16l3-12 6 6 8-9 8 9 6-6 3 12z" fill="#ffd166" stroke="#3b3150" stroke-width="1.5"/> <rect x="15" y="14" width="34" height="4" rx="1.5" fill="#ffd166" stroke="#3b3150" stroke-width="1.5"/> <g transform="translate(50 47) rotate(10)"><g class="tool"><rect x="-1.2" y="-9" width="2.4" height="10" rx="1.2" fill="#8a7f9b"/> <rect x="-6" y="0" width="12" height="9" rx="1.5" fill="#b9b2c9" stroke="#8a7f9b" stroke-width="1"/></g></g> </svg><svg viewBox="0 0 64 72" role="img" aria-label="tester" class=""> <ellipse cx="32" cy="67.5" rx="15" ry="3.5" fill="#3b3150" opacity=".14"/> <rect x="20" y="43" width="24" height="21" rx="9" fill="#f6c6ea" stroke="#3b3150" stroke-width="1.6"/> <rect x="26" y="47" width="12" height="10" rx="2.5" fill="#fff" stroke="#3b3150" stroke-width="1.2"/> <path d="M29 51.5h6" stroke="#f6c6ea" stroke-width="1.8" stroke-linecap="round"/> <circle cx="32" cy="27" r="18" fill="#fff0e4" stroke="#3b3150" stroke-width="1.8"/> <ellipse cx="25.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <ellipse cx="38.5" cy="27" rx="2.5" ry="3" fill="#3b3150"/> <circle cx="26.3" cy="25.8" r="1" fill="#fff"/> <circle cx="39.3" cy="25.8" r="1" fill="#fff"/> <path d="M28.5 33.2q3.5 3.2 7 0" fill="none" stroke="#3b3150" stroke-width="1.6" stroke-linecap="round"/> <ellipse cx="20" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <ellipse cx="44" cy="32" rx="3.6" ry="2.4" fill="#ff9fbd" opacity=".7"/> <path d="M18 16c-3-6 2-12 7-13 1-4 9-5 11-1 4-2 9 1 8 6 4 2 3 7-1 8z" fill="#fff" stroke="#3b3150" stroke-width="1.5"/> <rect x="17" y="14" width="30" height="6" rx="3" fill="#fff" stroke="#3b3150" stroke-width="1.5"/> <g transform="translate(50 47) rotate(16)"><g class="tool"><rect x="-1.2" y="-8" width="2.4" height="13" rx="1.2" fill="#b9b2c9"/> <path d="M-4 -13v5M0 -13v5M4 -13v5" stroke="#b9b2c9" stroke-width="1.6" stroke-linecap="round"/></g></g> </svg><span class="ghost-q" aria-hidden="true">?</span></div>
+      <div>
+        <h3>Your role here</h3>
+        <p>A designer, a security auditor, a release chef, a docs gardener. Drop a prompt file in <code>agents/</code> and it's a role. What it may do comes only from its <code>allowed_tools</code>: &ldquo;can assign &amp; close&rdquo; just means it was given those tools.</p>
+        <p class="note">builder, reviewer and researcher also ship as generic, reusable prompts in <code>library/</code>. The rest is up to you.</p>
+      </div>
+    </article>
+    <div class="cards two codes">
+      <figure class="code reveal">
+        <figcaption><i></i><i></i><i></i><span>project.yml</span></figcaption>
+<pre><code><span class="k">role_settings</span>:
+  <span class="k">builder</span>:  {model: small}
+  <span class="k">reviewer</span>: {model: small}
+  <span class="k">pm</span>:       {model: medium}
+
+<span class="k">allowed_tools</span>:
+  <span class="k">builder</span>: [list_issues, get_issue]
+  <span class="k">pm</span>:      [list_issues, get_issue,
+           update_issue, create_issue, assign_issue]
+
+<span class="k">transitions</span>:
+  <span class="k">builder</span>:  {built: assign reviewer, stuck: return}
+  <span class="k">reviewer</span>: {approved: merge, rejected: return}</code></pre>
+      </figure>
+      <figure class="code reveal">
+        <figcaption><i></i><i></i><i></i><span>agents/builder.md</span></figcaption>
+<pre><code><span class="c">---</span>
+<span class="k">name</span>: builder
+<span class="k">description</span>: <span class="s">"Builds one issue-sized feature or
+  fix in the repo at cwd, tests it, commits it."</span>
+<span class="c">---</span>
+
+You are building a change in the repo at your
+current working directory. You'll be given one
+issue; that is everything in scope for this turn.
+
+Work without asking questions. Build, don't wait.</code></pre>
+      </figure>
+    </div>
+  </section>
+
+  <!-- departments -->
+  <section id="departments" class="block">
+    <div class="sec-head reveal">
+      <p class="eyebrow">the brigade</p>
+      <h2>A kitchen with <em>departments.</em></h2>
+      <p class="sub">Folders decide who may change what. A pastry chef doesn't re-price the dining room, but can ask for it in writing.</p>
+    </div>
+    <ol class="tips">
+      <li class="card tone-mint reveal"><span class="num">1</span><div><h3>Folders are the walls</h3><p>Issues live in folders. An <code>edit_scopes</code> entry says which folders a role may change. A role outside them can't edit those issues, only file a new one there.</p></div></li>
+      <li class="card tone-peach reveal"><span class="num">2</span><div><h3>Requests are orders too</h3><p>Creating an issue is allowed in any folder, so a role that spots a problem in another department can say so without touching it.</p></div></li>
+      <li class="card tone-lav reveal"><span class="num">3</span><div><h3>Cost on every order</h3><p>Each turn's cost is written on its issue, by model. A retro role reads those records to say which departments pay off.</p></div></li>
+    </ol>
+  </section>
+
+  <!-- tokens -->
+  <section id="tokens" class="block">
+    <div class="sec-head reveal">
+      <p class="eyebrow">budget-friendly cooking</p>
+      <h2>Spend tokens like <em>a chef spends saffron.</em></h2>
+      <p class="sub">gitchen doesn't promise magic numbers. It gives you the knobs, and takes the expensive work off the model wherever it can.</p>
+    </div>
+    <ol class="tips">
+      <li class="card tone-mint reveal"><span class="num">1</span><div><h3>Right-size every role</h3><p>Each role asks for a <code>small</code>, <code>medium</code> or <code>big</code> model. Chop vegetables with a small one, reserve the big one for the roles that really think.</p></div></li>
+      <li class="card tone-peach reveal"><span class="num">2</span><div><h3>No chef supervising the chefs</h3><p>There is no coordinator model burning tokens to watch the others. Dispatch is a plain polling loop, and the circuit breaker, merge gate and directive parsing are ordinary code that costs zero tokens.</p></div></li>
+      <li class="card tone-lav reveal"><span class="num">3</span><div><h3>Fresh, short turns</h3><p>A role is spawned fresh against one issue and handed that issue's body and notes straight from git. No chat session is kept alive and dragged along from hop to hop.</p></div></li>
+      <li class="card tone-rose reveal"><span class="num">4</span><div><h3>Only the tools a role may touch</h3><p>A role's MCP connection lists only the tools in its <code>allowed_tools</code>, so it isn't shown, or tempted by, a whole toolbox it can't use.</p></div></li>
+      <li class="card tone-butter reveal"><span class="num">5</span><div><h3>A budget you set</h3><p>Set a spending limit for the instance, with a window if you like. The kitchen stops when it's reached, and carries on when the window moves or you reset it. Every order shows what it cost, by model.</p></div></li>
+    </ol>
+  </section>
+
+  <!-- how -->
+  <section id="how" class="block">
+    <div class="sec-head reveal">
+      <p class="eyebrow">the recipe</p>
+      <h2>From order to <em>plated.</em></h2>
+    </div>
+    <ol class="steps">
+      <li class="reveal"><span class="step-no">1</span><h3>File an order</h3><p>Create an issue. It's a commit, and it has an <code>assignee</code>.</p></li>
+      <li class="reveal"><span class="step-no">2</span><h3>The daemon notices</h3><p>An open issue whose assignee isn't busy gets that role spawned, whatever you named it. No one calls another role directly.</p></li>
+      <li class="reveal"><span class="step-no">3</span><h3>A chef cooks</h3><p>The turn runs sandboxed in the issue's worktree. Its output becomes a comment, and its last line says how it went: <code>built</code>. The kitchen's <code>transitions</code> table decides that a built order goes to review.</p></li>
+      <li class="reveal"><span class="step-no">4</span><h3>Serve it</h3><p>When the reviewer says <code>approved</code>, the table says <code>merge</code>, and the branch lands on main. A wait on other orders is <code>blocked_by #12 #13</code>, and the order cooks again by itself once they're done.</p></li>
+    </ol>
+    <p class="aside reveal">The bit you're in charge of is judgment: re-delegating something blocked, deciding what ships. Everything the daemon can drive, it drives purely off issue state.</p>
+  </section>
+
+  <!-- view -->
+  <section id="view" class="block">
+    <div class="sec-head reveal">
+      <p class="eyebrow">the kitchen view</p>
+      <h2>Peek into the kitchen, <em>anywhere.</em></h2>
+      <p class="sub"><code>gitchen web</code> serves a read-only view of your project: who's on the stove, what's queued, blocked or done, with a page per issue. It updates live and it looks lovely on a phone.</p>
+    </div>
+    <div class="shots reveal">
+      <figure class="browser">
+        <div class="bar" aria-hidden="true"><i></i><i></i><i></i></div>
+        <img src="assets/kitchen-view.png" width="1650" height="1035" alt="The gitchen kitchen view: a striped-awning kitchen with four chefs and a pot on the stove, counters for open, blocked, done and canceled issues, and the queue." loading="lazy">
+      </figure>
+      <figure class="phone">
+        <img src="assets/kitchen-phone.png" width="780" height="1580" alt="The same kitchen view on a phone." loading="lazy">
+      </figure>
+    </div>
+    <ul class="chips center reveal" aria-label="About the view">
+      <li>read-only by construction</li><li>live updates</li><li>one tunnel flag to share it</li>
+    </ul>
+  </section>
+
+  <!-- safe / harness -->
+  <section id="safe" class="block">
+    <div class="sec-head reveal">
+      <p class="eyebrow">any harness, safely</p>
+      <h2>Your CLI, <em>fenced in.</em></h2>
+    </div>
+    <div class="cards three">
+      <article class="card tone-peach reveal">
+        <div class="blob">🔌</div>
+        <h3>Bring your own agent</h3>
+        <p>Turns run through small adapters for Claude Code and omp, and nothing in the framework depends on one vendor. Which CLI and which models a machine uses is that machine's config, not the project's.</p>
+      </article>
+      <article class="card tone-mint reveal">
+        <div class="blob">🛡️</div>
+        <h3>Sandboxed turns</h3>
+        <p>Each turn runs inside an OS-level sandbox that can only touch the paths it's granted, mostly its own issue's worktree, and reach only the hosts you allow. Unattended agents can't wander off.</p>
+      </article>
+      <article class="card tone-lav reveal">
+        <div class="blob">🧩</div>
+        <h3>Plain MCP, no SDK</h3>
+        <p>The tools agents are trusted with are served by a tiny stdlib MCP server. Permissions are enforced there, whichever harness is on the other end.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- start -->
+  <section id="start" class="block">
+    <div class="sec-head reveal">
+      <p class="eyebrow">get cooking</p>
+      <h2>Preheat the <em>daemon.</em></h2>
+      <p class="sub">Install once per machine, then run gitchen from inside an instance repo: a git repo holding your <code>project.yml</code>, your <code>agents/*.md</code> and your issues.</p>
+    </div>
+    <div class="term reveal">
+      <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>terminal</span></div>
+      <div class="line"><code><span class="p">$</span> git clone https://github.com/josei/gitchen ~/Code/gitchen</code><button class="copy" data-copy="git clone https://github.com/josei/gitchen ~/Code/gitchen" aria-label="Copy command">copy</button></div>
+      <div class="line"><code><span class="p">$</span> ln -s ~/Code/gitchen/bin/gitchen ~/.local/bin/gitchen</code><button class="copy" data-copy="ln -s ~/Code/gitchen/bin/gitchen ~/.local/bin/gitchen" aria-label="Copy command">copy</button></div>
+      <div class="line"><code><span class="p">$</span> cd ~/Code/my-agents</code><button class="copy" data-copy="cd ~/Code/my-agents" aria-label="Copy command">copy</button></div>
+      <div class="line"><code><span class="p">$</span> gitchen daemon start</code><button class="copy" data-copy="gitchen daemon start" aria-label="Copy command">copy</button></div>
+      <div class="line"><code><span class="p">$</span> gitchen web</code><button class="copy" data-copy="gitchen web" aria-label="Copy command">copy</button></div>
+    </div>
+    <p class="aside reveal">On first use gitchen detects the agent CLIs you have, writes a sensible machine config, and installs its sandbox profile. The README has the whole menu.</p>
+  </section>
+
+  <section class="cta reveal">
+    <svg class="cta-mark" viewBox="0 0 48 48" aria-hidden="true"><path d="M33 30l11 8" stroke="#3b3150" stroke-width="7" stroke-linecap="round"/>
+      <path d="M33 30l11 8" stroke="#ffc2a8" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="21" cy="26" r="17" fill="#b6ead8" stroke="#3b3150" stroke-width="2.4"/>
+      <circle cx="21" cy="26" r="12.5" fill="#fff6dc" stroke="#3b3150" stroke-width="1.6"/>
+      <ellipse cx="21" cy="25" rx="5.4" ry="5.8" fill="#ffd770" stroke="#3b3150" stroke-width="1.4"/>
+      <circle cx="17.2" cy="23.5" r="1.5" fill="#3b3150"/>
+      <circle cx="24.8" cy="23.5" r="1.5" fill="#3b3150"/>
+      <path d="M18.6 27.2q2.4 2.4 4.8 0" fill="none" stroke="#3b3150" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="15.2" cy="26.8" r="1.5" fill="#ff9fbd"/>
+      <circle cx="26.8" cy="26.8" r="1.5" fill="#ff9fbd"/>
+      <path d="M33 5l1.1 2.6L37 8.7l-2.9 1.1L33 12.4l-1.1-2.6L29 8.7l2.9-1.1z" fill="#ff9fbd" stroke="#3b3150" stroke-width="1"/></svg>
+    <h2>The kitchen is open.</h2>
+    <p>Come cook with us. Stars, issues and tiny chef hats are all welcome.</p>
+    <a class="btn btn-primary btn-lg" href="https://github.com/josei/gitchen">gitchen on GitHub <span aria-hidden="true">♡</span></a>
+  </section>
+</main>
+
+<footer>
+  <p>Made with ♡ and a lot of tiny chefs · <a href="https://github.com/josei/gitchen">josei/gitchen</a> · Type set in Fredoka (<a href="fonts/OFL-Fredoka.txt">SIL OFL</a>)</p>
+</footer>
+<script src="app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""gitchen serve|sync|daemon — CLI over mcp/server.py, mcp/registry.py and mcp/daemon.py.
+
+Run from inside an instance repo (or pass --project-root, in any position).
+This binary's job is starting the MCP server and managing the daemon
+process, plus `sync`, which (unlike an MCP tool) needs to work before any
+server/agent session exists yet, for initial setup.
+"""
+import argparse
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from mcp import daemon, registry, server  # noqa: E402
+from mcp.config import ProjectConfig  # noqa: E402
+
+_root_parent = argparse.ArgumentParser(add_help=False)
+# SUPPRESS: a subcommand's default would overwrite the flag given before it.
+_root_parent.add_argument("--project-root", default=argparse.SUPPRESS)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(prog="gitchen", parents=[_root_parent])
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("sync", parents=[_root_parent], add_help=False,
+                    help="materialize registry.yml sources; pins any still-floating one at "
+                         "the commit it just resolved (edit the @ref out by hand to unpin)")
+    p_serve = sub.add_parser("serve", parents=[_root_parent], add_help=False,
+                              help="run the MCP server (stdio); what .mcp.json should invoke")
+    p_serve.add_argument("--role", default=None,
+                          help="restrict this connection to project.yml's allowed_tools[role]; omit for the coordinator")
+    p_serve.add_argument("--task-id", default=None,
+                          help="this connection's dispatch task id, for comment/commit attribution")
+
+    p_tick = sub.add_parser("tick", parents=[_root_parent], add_help=False,
+                             help="run one dispatch tick by hand and wait for the turn it starts")
+    p_tick.add_argument("--dry-run", action="store_true",
+                         help="say what would be dispatched, without dispatching")
+    p_tick.add_argument("--force", action="store_true",
+                         help="go past a pause after a failed turn, and past a spent budget")
+
+    p_budget = sub.add_parser("budget", parents=[_root_parent], add_help=False,
+                               help="show the instance's spending limit, or reset it so spending counts from now")
+    p_budget.add_argument("action", nargs="?", choices=["reset"])
+
+    p_call = sub.add_parser("call", parents=[_root_parent], add_help=False,
+                             help="call a gitchen tool from a program role or a scheduled job, with its own permissions")
+    p_call.add_argument("tool")
+    p_call.add_argument("arguments", nargs="?", default="{}", help="the tool's arguments as JSON")
+
+    p_retro = sub.add_parser("retro", parents=[_root_parent], add_help=False,
+                              help="what the turns cost, by role and model, and the costliest issues")
+    p_retro.add_argument("--since", default=None, help="only turns in the last N hours or days, e.g. 7d")
+
+    p_web = sub.add_parser("web", parents=[_root_parent], add_help=False,
+                            help="serve the read-only kitchen view (its own process, not the daemon)")
+    p_web.add_argument("--host", default="127.0.0.1")
+    p_web.add_argument("--port", type=int, default=8787)
+    p_web.add_argument("--tunnel", action="store_true",
+                        help="also start a cloudflared quick tunnel and print its public URL")
+
+    p_config = sub.add_parser("config", parents=[_root_parent], add_help=False,
+                               help="show the machine config, or regenerate it from the installed CLIs")
+    config_sub = p_config.add_subparsers(dest="config_cmd")
+    config_sub.add_parser("show", parents=[_root_parent], add_help=False)
+    p_config_init = config_sub.add_parser("init", parents=[_root_parent], add_help=False)
+    p_config_init.add_argument("--force", action="store_true",
+                                help="overwrite an existing config")
+
+    p_daemon = sub.add_parser("daemon", parents=[_root_parent], add_help=False,
+                               help="run the continuous issue-dispatch loop (no cron, no named jobs)")
+    daemon_sub = p_daemon.add_subparsers(dest="daemon_cmd", required=True)
+    p_start = daemon_sub.add_parser("start", parents=[_root_parent], add_help=False)
+    p_start.add_argument("--poll-seconds", type=int, default=20)
+    p_stop = daemon_sub.add_parser("stop", parents=[_root_parent], add_help=False,
+                                    help="stop the daemon; with --drain, let running turns finish first")
+    p_stop.add_argument("--drain", action="store_true",
+                        help="take no new turns, wait for the running ones, then leave on its own")
+    p_stop.add_argument("--timeout", type=float, default=1800,
+                        help="with --drain: seconds to wait before terminating the daemon (default 1800)")
+    daemon_sub.add_parser("status", parents=[_root_parent], add_help=False)
+    p_run = daemon_sub.add_parser("run", parents=[_root_parent], add_help=False,
+                                   help="run in the foreground (for debugging; start backgrounds this)")
+    p_run.add_argument("--poll-seconds", type=int, default=20)
+
+    args = ap.parse_args()
+    root = Path(getattr(args, "project_root", ".")).resolve()
+
+    if args.cmd == "tick":
+        from mcp import manual
+        try:
+            print(manual.run_one(ProjectConfig.load(root), force=args.force, dry_run=args.dry_run))
+        except manual.DaemonRunning as exc:
+            print(exc)
+            return 1
+    elif args.cmd == "budget":
+        from mcp import budget
+        cfg = ProjectConfig.load(root)
+        if args.action == "reset":
+            budget.reset(cfg.project_root)
+            print("reset: spending counts from now")
+        print(budget.describe(budget.status(cfg)))
+    elif args.cmd == "call":
+        import json
+        from mcp import control
+        task = os.environ.get("GITCHEN_TASK_ID")
+        if not task:
+            print("gitchen call runs inside a program role's turn or a scheduled job "
+                  "(GITCHEN_TASK_ID is not set)", file=sys.stderr)
+            return 2
+        project = os.environ.get("GITCHEN_PROJECT_ROOT") or str(root)
+        try:
+            result = control.call(Path(project), task, args.tool, json.loads(args.arguments))
+        except control.ControlError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        print(json.dumps(result))
+    elif args.cmd == "retro":
+        from mcp import retro
+        since = retro.parse_since(args.since) if args.since else None
+        print(retro.render(retro.summarize(ProjectConfig.load(root), since=since)))
+    elif args.cmd == "web":
+        from mcp import web
+        web.serve(str(root), host=args.host, port=args.port, tunnel=args.tunnel)
+    elif args.cmd == "config":
+        from mcp.global_config import default_path
+        config_path = Path(os.environ.get("GITCHEN_CONFIG") or default_path())
+        if args.config_cmd == "init":
+            if config_path.exists() and not args.force:
+                print(f"{config_path} already exists; pass --force to overwrite it")
+            else:
+                from mcp.machine_setup import write_default
+                write_default(config_path)
+        else:
+            print(config_path)
+            print(config_path.read_text() if config_path.exists()
+                  else "(missing — `gitchen config init` writes one from what's installed)")
+    elif args.cmd == "serve":
+        server.serve(str(root), args.role, args.task_id)
+    elif args.cmd == "sync":
+        synced = registry.sync(root)
+        print(f"synced {len(synced)} resource(s): {', '.join(synced) or '(none)'}")
+    elif args.cmd == "daemon":
+        if args.daemon_cmd == "start":
+            pid = daemon.start_daemon(root, args.poll_seconds)
+            print(f"daemon started, pid {pid}. Logs: {root / '.agents-daemon' / 'daemon.log'}")
+        elif args.daemon_cmd == "stop":
+            print(daemon.stop_daemon(root, drain_first=args.drain, timeout=args.timeout))
+        elif args.daemon_cmd == "status":
+            print(daemon.daemon_status(root))
+        elif args.daemon_cmd == "run":
+            daemon.run_forever(root, args.poll_seconds)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

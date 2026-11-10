@@ -1,0 +1,15 @@
+{
+  "extends": "nolabs-ai/claude",
+  "meta": {
+    "name": "gitchen",
+    "version": "1.0.0",
+    "description": "gitchen agent sandbox: agent state for omp and Claude Code, node/npm, headless Chromium (Playwright e2e), all localhost ports"
+  },
+  "filesystem": {
+    "allow": ["$HOME/.omp"]
+  },
+  "unsafe_macos_seatbelt_rules": [
+    "(allow iokit-open (iokit-user-client-class \"RootDomainUserClient\"))",
+    "(allow mach-register (global-name-prefix \"org.chromium.Chromium.MachPortRendezvousServer.\"))"
+  ]
+}

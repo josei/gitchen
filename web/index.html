@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>gitchen</title>
+<link rel="preload" href="/static/fonts/fredoka.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="sparkles" aria-hidden="true">
+  <i style="--x:6%;--y:16%;--s:18px;--d:0s">✦</i>
+  <i style="--x:93%;--y:11%;--s:14px;--d:1.2s">✦</i>
+  <i style="--x:88%;--y:46%;--s:20px;--d:2.1s">✧</i>
+  <i style="--x:3%;--y:58%;--s:15px;--d:.7s">✧</i>
+  <i style="--x:47%;--y:94%;--s:17px;--d:1.8s">✦</i>
+  <i style="--x:20%;--y:82%;--s:13px;--d:2.6s">✦</i>
+  <i style="--x:72%;--y:78%;--s:16px;--d:.4s">✧</i>
+  <i style="--x:60%;--y:6%;--s:12px;--d:3s">✦</i>
+</div>
+<header class="top">
+  <a class="brand" href="/">
+    <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M33 30l11 8" stroke="#3b3150" stroke-width="7" stroke-linecap="round"/>
+      <path d="M33 30l11 8" stroke="#ffc2a8" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="21" cy="26" r="17" fill="#b6ead8" stroke="#3b3150" stroke-width="2.4"/>
+      <circle cx="21" cy="26" r="12.5" fill="#fff6dc" stroke="#3b3150" stroke-width="1.6"/>
+      <ellipse cx="21" cy="25" rx="5.4" ry="5.8" fill="#ffd770" stroke="#3b3150" stroke-width="1.4"/>
+      <circle cx="17.2" cy="23.5" r="1.5" fill="#3b3150"/>
+      <circle cx="24.8" cy="23.5" r="1.5" fill="#3b3150"/>
+      <path d="M18.6 27.2q2.4 2.4 4.8 0" fill="none" stroke="#3b3150" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="15.2" cy="26.8" r="1.5" fill="#ff9fbd"/>
+      <circle cx="26.8" cy="26.8" r="1.5" fill="#ff9fbd"/>
+      <path d="M33 5l1.1 2.6L37 8.7l-2.9 1.1L33 12.4l-1.1-2.6L29 8.7l2.9-1.1z" fill="#ff9fbd" stroke="#3b3150" stroke-width="1"/>
+    </svg>
+    <span class="brand-name" id="project-name">…</span>
+  </a>
+  <div class="pills">
+    <span id="daemon-pill" class="pill">kitchen …</span>
+    <button id="schedules-pill" class="pill pill-button hidden" type="button"
+            aria-haspopup="dialog">⏰ schedules</button>
+    <span id="next-pill" class="pill hidden"></span>
+  </div>
+</header>
+
+<main id="app" class="app">
+  <p class="loading">warming up the kitchen…</p>
+</main>
+
+<div id="toast" class="toast hidden" role="status"></div>
+<script src="/static/app.js" defer></script>
+</body>
+</html>
