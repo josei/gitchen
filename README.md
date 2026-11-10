@@ -1,6 +1,6 @@
 # gitchen
 
-<img src="docs/gitchen.svg" alt="Gitchen's mascot watching over its swarm of bots" width="480">
+<img src="site/assets/kitchen-view.png" alt="The gitchen kitchen view: four chefs in a striped-awning kitchen with a pot on the stove, counters for open, blocked, done and canceled issues, and the queue." width="720">
 
 **Git-based agent orchestration.** A tiny kitchen of AI chefs that cook your
 issues. Issues are files, roles are prompts, and git remembers everything.
