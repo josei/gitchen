@@ -332,6 +332,10 @@ function bubble(entry) {
 const STATE_GROUPS = { done: ["done", "merged"] };
 const statesOf = (state) => STATE_GROUPS[state] || [state];
 
+// `updated` is an ISO time, so it compares as text; an issue without one sorts last.
+const FINISHED = new Set(["done", "canceled"]);
+const byLatest = (a, b) => (b.updated || "").localeCompare(a.updated || "") || b.id - a.id;
+
 const STATE_ICONS = { open: "🥣", blocked: "🧊", done: "🍰", canceled: "💨" };
 
 function renderOverview() {
@@ -523,6 +527,9 @@ async function applyFilter() {
       return getJSON(`/api/issues?${params}`);
     }));
     filtered = lists.flatMap((list) => list.issues);
+    // The server orders by priority, which is the queue's order. A finished
+    // issue has no place in a queue, so show the most recently moved first.
+    if (FINISHED.has(filter.state)) filtered.sort(byLatest);
     renderOverview();
   } catch (error) {
     toast("could not read the orders");
