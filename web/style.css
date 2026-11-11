@@ -677,8 +677,8 @@ a.scene-issue:hover { color: var(--lavender); }
 .bubble .text h4 { margin: 14px 0 4px; font-size: 15px; font-weight: 700; }
 .body p,
 .bubble .text p { margin: 8px 0; }
-.body ul,
-.bubble .text ul { margin: 6px 0 6px 20px; padding: 0; }
+.body ul, .body ol,
+.bubble .text ul, .bubble .text ol { margin: 6px 0 6px 20px; padding: 0; }
 .body li,
 .bubble .text li { margin: 3px 0; }
 .body li::marker,

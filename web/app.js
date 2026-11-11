@@ -152,9 +152,7 @@ function md(text) {
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" loading="lazy">')
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" rel="noreferrer" target="_blank">$1</a>');
-  out = out.replace(/^(?:- (.+))$/gm, "<li>$1</li>");
-  out = out.replace(/(?:^|\n)((?:<li>.*<\/li>\n?)+)/g, (_, list) => `<ul>${list}</ul>`);
-  return out
+  return lists(out)
     .split(/\n{2,}/)
     .map((block) => {
       if (block.includes("\u0000fence")) {
@@ -166,9 +164,39 @@ function md(text) {
       }
       const table = renderTable(block.trim());
       if (table) return table;
-      return /^\s*<(h3|h4|ul|pre)/.test(block) ? block : `<p>${softWrap(block)}</p>`;
+      return /^\s*<(h3|h4|ul|ol|pre)/.test(block) ? block : `<p>${softWrap(block)}</p>`;
     })
     .join("");
+}
+
+// Groups consecutive list lines into one <ul> or <ol>. A numbered list keeps
+// its first number, and a list gets blank lines around it so it is a block of
+// its own even when it follows a paragraph line with no blank line between.
+function lists(text) {
+  const out = [];
+  let open = null;
+  const close = () => {
+    if (open) out.push(`</${open}>`, "");
+    open = null;
+  };
+  for (const line of text.split("\n")) {
+    const item = line.match(/^(?:[-*]|(\d+)[.)]) (.+)$/);
+    if (!item) {
+      close();
+      out.push(line);
+      continue;
+    }
+    const tag = item[1] === undefined ? "ul" : "ol";
+    if (tag !== open) {
+      close();
+      const start = tag === "ol" && item[1] !== "1" ? ` start="${Number(item[1])}"` : "";
+      out.push("", `<${tag}${start}>`);
+      open = tag;
+    }
+    out.push(`<li>${item[2]}</li>`);
+  }
+  close();
+  return out.join("\n");
 }
 
 function renderTable(block) {
