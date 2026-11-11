@@ -128,3 +128,17 @@ def test_a_single_file_is_granted_with_read_file_and_a_folder_with_read(tmp_path
     args = sandbox.prefix({"sandbox": {"profile": "p", "read": [str(script), str(folder)]}}, str(tmp_path))
     assert args[args.index(str(script)) - 1] == "--read-file"
     assert args[args.index(str(folder)) - 1] == "--read"
+
+
+def test_an_allowed_file_is_granted_with_allow_file(tmp_path, monkeypatch):
+    """nono's --allow refuses a single file ("Use --allow-file for single
+    files"), so a writable file grant, like a package manager's lock file,
+    needs its own flag. Found only by running the real sandbox."""
+    monkeypatch.setenv("GITCHEN_CONFIG", str(tmp_path / "absent.yml"))
+    lock = tmp_path / "package-cache"
+    lock.write_text("")
+    folder = tmp_path / "registry"
+    folder.mkdir()
+    args = sandbox.prefix({"sandbox": {"profile": "custom", "allow": [str(lock), str(folder)]}}, str(tmp_path))
+    assert args[args.index(str(lock)) - 1] == "--allow-file"
+    assert args[args.index(str(folder)) - 1] == "--allow"

@@ -60,7 +60,11 @@ def prefix(settings: dict, cwd: str, api_hosts: tuple[str, ...] = ()) -> list[st
         # only: nothing here can listen on it.
         args += ["--allow-unix-socket-dir", str(Path(project_root) / ".agents-daemon")]
     for extra in sandbox.get("allow") or []:
-        args += ["--allow", os.path.expanduser(extra)]
+        # Same split as `read` below: nono's --allow takes a directory and
+        # refuses a file, so a single file (a tool's lock file, say) gets
+        # --allow-file.
+        flag = "--allow-file" if Path(os.path.expanduser(extra)).is_file() else "--allow"
+        args += [flag, os.path.expanduser(extra)]
     for path in sandbox.get("read") or []:
         # nono takes a directory with --read and a single file with --read-file.
         flag = "--read-file" if Path(os.path.expanduser(path)).is_file() else "--read"
