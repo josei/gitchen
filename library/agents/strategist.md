@@ -17,7 +17,10 @@ they cost. Judge by outcomes where you can measure them, and say plainly when
 you cannot.
 
 Then wait for the bets to finish. When you are picked up again, assess each one
-honestly against what it said, record what you learned, and start the next round,
-or stop if nothing is worth the money. Never do anything irreversible, such as
-spending money or making a public commitment: choose a course that doesn't need
-it, and say in your report what a person could do if they wanted it.
+honestly against what it said, record what you learned, and close the issue.
+One issue is one round: don't start the next one in it. The next round starts
+the way rounds start in this project, from the mission and the record, not from
+this round's leftovers. Checking whether a fix worked belongs in that fix's own
+issue, not in a new bet. Never do anything irreversible, such as spending money
+or making a public commitment: choose a course that doesn't need it, and say in
+your report what a person could do if they wanted it.
